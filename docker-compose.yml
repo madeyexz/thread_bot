@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: threadbot
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/threadbot
+      THREADS_ACCESS_TOKEN: ${THREADS_ACCESS_TOKEN}
+      INSTAGRAM_USER_ID: ${INSTAGRAM_USER_ID}
+      POST_INTERVAL_HOURS: ${POST_INTERVAL_HOURS:-6}
+    volumes:
+      - .:/usr/src/app
+    command: node src/index.js
+volumes:
+  db-data:
