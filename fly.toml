@@ -1,0 +1,12 @@
+app = "pg-threads-bot"
+primary_region = "sjc"           # choose the cheapest/nearest region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  POST_INTERVAL_HOURS = "6"
+  EXPIRY_WARN_DAYS    = "7"
+
+[[mounts]]
+  # none – stateless image, quotes baked in

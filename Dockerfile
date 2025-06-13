@@ -1,6 +1,14 @@
-FROM node:18
-WORKDIR /usr/src/app
+FROM node:20-slim
+
+WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
-COPY . .
-CMD ["node", "src/index.js"]
+RUN npm ci --omit=dev
+
+COPY index.js quotes.txt ./
+
+# Minimal non-root user
+RUN useradd -m bot
+USER bot
+
+ENV NODE_ENV=production
+CMD ["node", "index.js"]

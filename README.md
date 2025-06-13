@@ -39,6 +39,8 @@ Edit the `.env` file with your credentials:
 ```bash
 THREADS_ACCESS_TOKEN=your_actual_threads_access_token
 INSTAGRAM_USER_ID=your_actual_instagram_user_id
+THREADS_APP_ID=your_threads_app_id
+THREADS_APP_SECRET=your_threads_app_secret
 POST_INTERVAL_HOURS=6
 ```
 
@@ -66,11 +68,14 @@ app_1  | Posted quote: It's hard to do a really good job on anything you don't t
 
 ### Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `THREADS_ACCESS_TOKEN` | Your Threads API access token | Yes | - |
-| `INSTAGRAM_USER_ID` | Your Instagram user ID for Threads | Yes | - |
-| `POST_INTERVAL_HOURS` | How often to post quotes (in hours) | No | 6 |
+| Variable                | Description                                  | Required | Default |
+|-------------------------|----------------------------------------------|----------|---------|
+| `THREADS_ACCESS_TOKEN`  | Your Threads API access token                | Yes      | -       |
+| `INSTAGRAM_USER_ID`     | Your Instagram user ID for Threads           | Yes      | -       |
+| `POST_INTERVAL_HOURS`   | How often to post quotes (in hours)          | No       | 6       |
+| `THREADS_APP_ID`        | Your Meta App ID (used for token debugging)  | Yes      | -       |
+| `THREADS_APP_SECRET`    | Your Meta App Secret                         | Yes      | -       |
+| `EXPIRY_WARN_DAYS`      | Days before expiry to emit a warning         | No       | 7       |
 
 ### Getting Your Threads API Credentials
 
