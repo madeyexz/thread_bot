@@ -1,210 +1,48 @@
-# Thread Bot
+# pg-threads-bot
+A simple write-up to the technical details of this implementation.
 
-This project automatically posts Paul Graham quotes to Threads on a scheduled basis using Docker services.
 
-## Overview
+## Getting the quotes
 
-The Thread Bot consists of:
-- A Node.js application that schedules and posts quotes
-- A PostgreSQL database to store quotes
-- Docker containerization for easy deployment
+The quotes come from OpenAI Deep Research reading from Paul Graham's essays.
 
-## Prerequisites
+> Read Paul Graham's essays on his site. Find/extract 150 insights in their original words. They should be insightful and short. Remember, use the original phrases and words.
 
-Before starting, ensure you have:
-- [Docker](https://docs.docker.com/get-docker/) installed on your system
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
-- A Threads API access token
-- Your Instagram user ID associated with your Threads account
+## Getting `THREADS_ACCESS_TOKEN`
 
-## Quick Start
+You need a developer’s account at [developers.facebook.com](https://developers.facebook.com) and some rando's account.
 
-### 1. Clone and Navigate to the Project
+Steps:
 
-```bash
-git clone <your-repo-url>
-cd thread_bot
+1. Create a new app in the Meta Developer Portal and select "Threads API" as the use case.
+2. Tick the `threads_basic` and `threads_content_publish` permissions.
+3. Add your account as a Threads Tester, then grant permission in the Threads Web App (Settings → Account → Website Permissions → Invites).
+4. Configure Redirect Callback URLs to generate an `Access Token`. 
+
+
+These `Access Token`s are the only important secrets you need to post using the name of someone.
+
+> **Note:** Each long-term access token is valid for 60 days.
+
+## Deploying the app on [fly.io](https://fly.io)
+
+use `fly launch` to create the fly app. this will read the fly.toml file and create a new app.
+
 ```
-
-### 2. Set Up Environment Variables
-
-Copy the example environment file and configure it:
-
-```bash
-cp .env.example .env
+? Would you like to copy its configuration to the new app? Yes
 ```
+Say 'yes' so it can use the configurations in `fly.toml`, which is more desired than fixing these later on.
 
-Edit the `.env` file with your credentials:
+use `fly secrets set THREADS_ACCESS_TOKEN=<your-token>` to set the token for threads.
 
-```bash
-THREADS_ACCESS_TOKEN=your_actual_threads_access_token
-INSTAGRAM_USER_ID=your_actual_instagram_user_id
-THREADS_APP_ID=your_threads_app_id
-THREADS_APP_SECRET=your_threads_app_secret
-POST_INTERVAL_HOURS=6
-```
+threads_access_token is the token from the user, that you use to post. You get this from Meta Developer Portal.
 
-### 3. Build and Start the Services
+use `fly deploy` to deploy the app.
 
-```bash
-docker-compose up --build
-```
+You can only schedule jobs with fly after the machine is deployed. With fly, you can only schedule jobs to run hourly, daily, weekly, monthly, etc. To have it run every 12 hours, you have to add some checks in your code.
 
-This command will:
-- Build the Node.js application container
-- Start a PostgreSQL database container
-- Seed the database with initial quotes
-- Begin the automated posting schedule
+To schedule a job, use `fly machine update <machine_id> --schedule hourly` to schedule it to run hourly.
 
-### 4. Verify the Service is Running
+To see the machine id, use `fly machine list`.
 
-You should see output similar to:
-```
-app_1  | Connected to DB. Posting every 6 hours.
-app_1  | Posted quote: It's hard to do a really good job on anything you don't think about in the shower.
-```
-
-## Configuration
-
-### Environment Variables
-
-| Variable                | Description                                  | Required | Default |
-|-------------------------|----------------------------------------------|----------|---------|
-| `THREADS_ACCESS_TOKEN`  | Your Threads API access token                | Yes      | -       |
-| `INSTAGRAM_USER_ID`     | Your Instagram user ID for Threads           | Yes      | -       |
-| `POST_INTERVAL_HOURS`   | How often to post quotes (in hours)          | No       | 6       |
-| `THREADS_APP_ID`        | Your Meta App ID (used for token debugging)  | Yes      | -       |
-| `THREADS_APP_SECRET`    | Your Meta App Secret                         | Yes      | -       |
-| `EXPIRY_WARN_DAYS`      | Days before expiry to emit a warning         | No       | 7       |
-
-### Getting Your Threads API Credentials
-
-1. **Threads Access Token**: You'll need to set up a Meta Developer account and create an app with Threads API access
-2. **Instagram User ID**: This is your Instagram account's user ID that's linked to your Threads account
-
-## Database Management
-
-### Initial Quotes
-
-The database is automatically seeded with sample Paul Graham quotes from `seed.sql`:
-- "It's hard to do a really good job on anything you don't think about in the shower."
-- "The most successful people are often the ones who take the initiative."
-- "If you're not failing occasionally, you're probably not trying hard enough."
-
-### Adding More Quotes
-
-To add more quotes, edit the `seed.sql` file:
-
-```sql
-INSERT INTO quotes (text) VALUES
-('Your new quote here'),
-('Another quote here');
-```
-
-Then rebuild and restart the services:
-
-```bash
-docker-compose down
-docker-compose up --build
-```
-
-### Database Access
-
-To access the PostgreSQL database directly:
-
-```bash
-docker-compose exec db psql -U postgres -d threadbot
-```
-
-## Docker Commands
-
-### Start Services (Detached Mode)
-```bash
-docker-compose up -d
-```
-
-### Stop Services
-```bash
-docker-compose down
-```
-
-### View Logs
-```bash
-# All services
-docker-compose logs
-
-# Specific service
-docker-compose logs app
-docker-compose logs db
-
-# Follow logs in real-time
-docker-compose logs -f app
-```
-
-### Rebuild After Changes
-```bash
-docker-compose up --build
-```
-
-### Remove All Data (Including Database)
-```bash
-docker-compose down -v
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"THREADS_ACCESS_TOKEN and INSTAGRAM_USER_ID must be set" Error**
-   - Ensure your `.env` file exists and contains valid credentials
-   - Check that there are no extra spaces or quotes around the values
-
-2. **Database Connection Issues**
-   - Wait a few seconds for the database to fully start
-   - Check logs: `docker-compose logs db`
-
-3. **Threads API Errors**
-   - Verify your access token is valid and hasn't expired
-   - Check that your Instagram user ID is correct
-   - Review Threads API rate limits
-
-### Checking Service Health
-
-```bash
-# Check if containers are running
-docker-compose ps
-
-# Check application logs for errors
-docker-compose logs app
-
-# Check database connectivity
-docker-compose exec app node -e "console.log('DB URL:', process.env.DATABASE_URL)"
-```
-
-## Development
-
-### File Structure
-```
-thread_bot/
-├── src/
-│   └── index.js          # Main application code
-├── docker-compose.yml    # Docker services configuration
-├── Dockerfile           # Node.js app container definition
-├── package.json         # Node.js dependencies
-├── seed.sql            # Database initialization
-├── .env.example        # Environment variables template
-└── README.md          # This file
-```
-
-### Making Code Changes
-
-The application directory is mounted as a volume, so you can make changes to the code and restart just the app service:
-
-```bash
-docker-compose restart app
-```
-
-## License
-
-This project is open source. Please ensure you comply with Threads API terms of service when using this bot.
-
+To see the logs streamed to your terminal, use `fly logs -i <machine_id>`.
