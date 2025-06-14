@@ -1,24 +1,12 @@
-# fly.toml app configuration file generated for pg-threads-bot on 2025-06-14T03:42:09+08:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
-app = 'pg-threads-bot'
-primary_region = 'sjc'
-
-[build]
-  dockerfile = 'Dockerfile'
+# fly.toml --- pg-threads-bot
+app = "pg-threads-bot"
+primary_region = "sjc"
 
 [env]
-  EXPIRY_WARN_DAYS = '7'
-  POST_INTERVAL_HOURS = '6'
+EXPIRY_WARN_DAYS    = "7"
+POST_INTERVAL_HOURS = "1"          # index.js reads this
+# THREADS_ACCESS_TOKEN will be set as a secret, not checked-in
 
-[[machines]]
-  image = 'ghcr.io/you/threads-mini-bot:latest'
-  schedule = 'hourly'
-  cmd = ['node', 'index.js', '--once']
-  
-  [machines.guest]
-    cpu_kind = 'shared'
-    cpus = 0.05
-    memory_mb = 128
+[[vm]]
+  cpu_kind = "shared"
+  memory   = "256mb"               # plenty for a one-shot job
