@@ -82,3 +82,17 @@ After deployment, you can schedule the bot to run automatically:
    ```bash
    fly logs -i <machine_id>
    ```
+
+### Customizing Post Interval
+
+To change the posting frequency, update the `POST_INTERVAL_HOURS` environment variable on your Fly Machine. For example, to set the interval to every 6 hours:
+
+```bash
+# Example for app 'pg-threads-bot'
+fly machine update <machine_id> \\
+  --app pg-threads-bot \\
+  -e POST_INTERVAL_HOURS=6 \\
+  --yes
+```
+
+Replace `<machine_id>` with your actual machine ID from `fly machine list`.
