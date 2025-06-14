@@ -1,15 +1,13 @@
 // Minimal Threads poster – single file, no DB
 import fs from 'node:fs';
-import { setTimeout } from 'node:timers/promises';
 import fetch from 'node-fetch';
 
-const QUOTES_FILE = './quotes.txt';
+const QUOTES_FILE = './quotes_147.txt';
 const INTERVAL_H = Number(process.env.POST_INTERVAL_HOURS || 6);
 const ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
-const EXP_WARN_DAYS = Number(process.env.EXPIRY_WARN_DAYS || 7);
 
 if (!ACCESS_TOKEN) {
-    console.error('Env var THREADS_ACCESS_TOKEN is required.');
+    console.error('❌ Env var THREADS_ACCESS_TOKEN is required.');
     process.exit(1);
 }
 
@@ -22,34 +20,6 @@ function randomQuote() {
     return QUOTES[Math.floor(Math.random() * QUOTES.length)];
 }
 
-async function debugToken() {
-    console.log(`🔍 Debuging token`);
-    console.log(`Skipped`);
-    // console.log(`🔑 Token length: ${ACCESS_TOKEN.length}`);
-    // console.log(`🔑 Token starts with: ${ACCESS_TOKEN.substring(0, 10)}...`);
-
-    // const APP_TOKEN = `${process.env.THREADS_APP_ID}|${process.env.THREADS_APP_SECRET}`;
-
-    // const url =
-    //     'https://graph.facebook.com/debug_token?' +
-    //     new URLSearchParams({
-    //         input_token: ACCESS_TOKEN,      // user token
-    //         access_token: APP_TOKEN         // app token
-    //     });
-
-    // const r = await fetch(url, { method: 'GET' });
-
-    // if (!r.ok) {
-    //     const responseText = await r.text();
-    //     console.error(`❌ Token debug failed: ${r.status} ${r.statusText}`);
-    //     console.error(`Response: ${responseText}`);
-    //     console.error(`Headers:`, Object.fromEntries(r.headers.entries()));
-    //     throw new Error(`Token debug failed: ${r.status} ${r.statusText} - ${responseText}`);
-    // }
-    // console.log(`✅ Token debug successful`);
-    // return (await r.json()).data;
-}
-
 async function createContainer(text) {
     const r = await fetch('https://graph.threads.net/me/threads', {
         method: 'POST',
@@ -58,7 +28,7 @@ async function createContainer(text) {
     if (!r.ok) {
         const responseText = await r.text();
         console.error(`❌ Create container failed: ${r.status} ${r.statusText}`);
-        console.error(`Response: ${responseText}`);
+        console.error(`❌ Response: ${responseText}`);
         throw new Error(`Create container failed: ${r.status} ${r.statusText} - ${responseText}`);
     }
     return (await r.json()).id;
@@ -72,7 +42,7 @@ async function publishContainer(id) {
     if (!r.ok) {
         const responseText = await r.text();
         console.error(`❌ Publish container failed: ${r.status} ${r.statusText}`);
-        console.error(`Response: ${responseText}`);
+        console.error(`❌ Response: ${responseText}`);
         throw new Error(`Publish container failed: ${r.status} ${r.statusText} - ${responseText}`);
     }
     return (await r.json()).id;
@@ -81,8 +51,8 @@ async function publishContainer(id) {
 async function postOnce() {
     // Only post every 6 hours (when UTC hour is divisible by 6)
     const currentHour = new Date().getUTCHours();
-    if (currentHour % 6 !== 0) {
-        console.log(`[${new Date().toISOString()}] ⏰ Skipping post - current hour ${currentHour} is not divisible by 6`);
+    if (currentHour % INTERVAL_H !== 0) {
+        console.log(`[${new Date().toISOString()}] ⏰ Skipping post - current hour ${currentHour} is not divisible by ${INTERVAL_H}`);
         return;
     }
 
@@ -92,36 +62,13 @@ async function postOnce() {
     console.log(`[${new Date().toISOString()}] ✅ ${postId}: ${quote}`);
 }
 
-async function loop() {
-    while (true) {
-        try {
-            // Warn if token near expiry
-            let tokenMeta;
-            try {
-                tokenMeta = await debugToken();
-                const secs = tokenMeta.expires_at - Math.floor(Date.now() / 1e3);
-                if (secs < EXP_WARN_DAYS * 86400)
-                    console.warn(`⚠️  Token expires in ${(secs / 86400).toFixed(1)} days`);
-            } catch (e) {
-                console.warn('⚠️  Token check skipped:', e.message);
-            }
-
-            await postOnce();
-        } catch (e) {
-            console.error('❌', e);
-        }
-        await setTimeout(INTERVAL_H * 3600 * 1000);
-    }
-}
-
 // ------------------------------------------------------------ entry point
-const ONCE = process.argv.includes('--once');
-
 (async () => {
-    if (ONCE) {
+    try {
         await postOnce();
-        process.exit(0);        // required for Fly scheduled jobs
-    } else {
-        await loop();           // original 24×7 mode
+    } catch (e) {
+        console.error('❌', e);
+        process.exit(1);
     }
+    process.exit(0);
 })();
