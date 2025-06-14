@@ -1,12 +1,17 @@
-app = "pg-threads-bot"
-primary_region = "sjc"           # choose the cheapest/nearest region
+# fly.toml app configuration file generated for pg-threads-bot on 2025-06-14T03:42:09+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'pg-threads-bot'
+primary_region = 'sjc'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  POST_INTERVAL_HOURS = "6"
-  EXPIRY_WARN_DAYS    = "7"
+  EXPIRY_WARN_DAYS = '7'
+  POST_INTERVAL_HOURS = '6'
 
-[[mounts]]
-  # none – stateless image, quotes baked in
+[[vm]]
+  size = 'shared-cpu-1x'

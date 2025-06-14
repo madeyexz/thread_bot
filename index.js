@@ -6,13 +6,10 @@ import fetch from 'node-fetch';
 const QUOTES_FILE = './quotes.txt';
 const INTERVAL_H = Number(process.env.POST_INTERVAL_HOURS || 6);
 const ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
-const APP_ID = process.env.THREADS_APP_ID;
-const APP_SECRET = process.env.THREADS_APP_SECRET;
-const APP_TOKEN = `${APP_ID}|${APP_SECRET}`;
 const EXP_WARN_DAYS = Number(process.env.EXPIRY_WARN_DAYS || 7);
 
-if (!ACCESS_TOKEN || !APP_ID || !APP_SECRET) {
-    console.error('Env vars THREADS_ACCESS_TOKEN, THREADS_APP_ID, THREADS_APP_SECRET are required.');
+if (!ACCESS_TOKEN) {
+    console.error('Env var THREADS_ACCESS_TOKEN is required.');
     process.exit(1);
 }
 
@@ -26,11 +23,29 @@ function randomQuote() {
 }
 
 async function debugToken() {
-    const url = new URL('https://graph.threads.net/debug_token');
-    url.searchParams.set('input_token', ACCESS_TOKEN);
-    url.searchParams.set('access_token', APP_TOKEN);
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(await r.text());
+    console.log(`🔍 Debuging token`);
+    console.log(`🔑 Token length: ${ACCESS_TOKEN.length}`);
+    console.log(`🔑 Token starts with: ${ACCESS_TOKEN.substring(0, 10)}...`);
+
+    const r = await fetch('https://graph.threads.net/debug_token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            input_token: ACCESS_TOKEN,
+            access_token: ACCESS_TOKEN
+        })
+    });
+
+    if (!r.ok) {
+        const responseText = await r.text();
+        console.error(`❌ Token debug failed: ${r.status} ${r.statusText}`);
+        console.error(`Response: ${responseText}`);
+        console.error(`Headers:`, Object.fromEntries(r.headers.entries()));
+        throw new Error(`Token debug failed: ${r.status} ${r.statusText} - ${responseText}`);
+    }
+    console.log(`✅ Token debug successful`);
     return (await r.json()).data;
 }
 
@@ -39,7 +54,12 @@ async function createContainer(text) {
         method: 'POST',
         body: new URLSearchParams({ text, media_type: 'TEXT', access_token: ACCESS_TOKEN })
     });
-    if (!r.ok) throw new Error(await r.text());
+    if (!r.ok) {
+        const responseText = await r.text();
+        console.error(`❌ Create container failed: ${r.status} ${r.statusText}`);
+        console.error(`Response: ${responseText}`);
+        throw new Error(`Create container failed: ${r.status} ${r.statusText} - ${responseText}`);
+    }
     return (await r.json()).id;
 }
 
@@ -48,7 +68,12 @@ async function publishContainer(id) {
         method: 'POST',
         body: new URLSearchParams({ creation_id: id, access_token: ACCESS_TOKEN })
     });
-    if (!r.ok) throw new Error(await r.text());
+    if (!r.ok) {
+        const responseText = await r.text();
+        console.error(`❌ Publish container failed: ${r.status} ${r.statusText}`);
+        console.error(`Response: ${responseText}`);
+        throw new Error(`Publish container failed: ${r.status} ${r.statusText} - ${responseText}`);
+    }
     return (await r.json()).id;
 }
 
@@ -70,10 +95,20 @@ async function loop() {
 
             await postOnce();
         } catch (e) {
-            console.error('❌', e.message);
+            console.error('❌', e);
         }
         await setTimeout(INTERVAL_H * 3600 * 1000);
     }
 }
 
-loop();
+// ------------------------------------------------------------ entry point
+const ONCE = process.argv.includes('--once');
+
+(async () => {
+    if (ONCE) {
+        await postOnce();
+        process.exit(0);        // required for Fly scheduled jobs
+    } else {
+        await loop();           // original 24×7 mode
+    }
+})();

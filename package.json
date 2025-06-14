@@ -1,0 +1,16 @@
+{
+  "name": "threads-mini-bot",
+  "version": "1.0.0",
+  "description": "Lightweight Paul-Graham-quote poster for Threads",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
