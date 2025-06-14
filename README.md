@@ -1,48 +1,82 @@
-# pg-threads-bot
-A simple write-up to the technical details of this implementation.
+# PG Threads Bot
 
+A technical implementation guide for automatically posting Paul Graham quotes to Threads.
 
-## Getting the quotes
+## Overview
 
-The quotes come from OpenAI Deep Research reading from Paul Graham's essays.
+This bot automatically posts insightful quotes from Paul Graham's essays to Threads using the Threads API. The quotes are curated using OpenAI's Deep Research to extract meaningful insights from Paul Graham's published essays.
+
+## Getting the Quotes
+
+The quotes are generated using OpenAI Deep Research with the following prompt:
 
 > Read Paul Graham's essays on his site. Find/extract 150 insights in their original words. They should be insightful and short. Remember, use the original phrases and words.
 
-## Getting `THREADS_ACCESS_TOKEN`
+## Setting Up Threads API Access
 
-You need a developer’s account at [developers.facebook.com](https://developers.facebook.com) and some rando's account.
+To use this bot, you'll need a Threads Access Token from Meta's Developer Portal.
 
-Steps:
+### Prerequisites
 
-1. Create a new app in the Meta Developer Portal and select "Threads API" as the use case.
-2. Tick the `threads_basic` and `threads_content_publish` permissions.
-3. Add your account as a Threads Tester, then grant permission in the Threads Web App (Settings → Account → Website Permissions → Invites).
-4. Configure Redirect Callback URLs to generate an `Access Token`. 
+- Developer account at [developers.facebook.com](https://developers.facebook.com)
+- Personal Threads account for testing
 
+### Steps
 
-These `Access Token`s are the only important secrets you need to post using the name of someone.
+1. **Create a Meta App**
+   - Create a new app in the Meta Developer Portal
+   - Select "Threads API" as the use case
 
-> **Note:** Each long-term access token is valid for 60 days.
+2. **Configure Permissions**
+   - Enable `threads_basic` and `threads_content_publish` permissions
 
-## Deploying the app on [fly.io](https://fly.io)
+3. **Add Test User**
+   - Add your account as a Threads Tester
+   - Grant permission in the Threads Web App: Settings → Account → Website Permissions → Invites
 
-use `fly launch` to create the fly app. this will read the fly.toml file and create a new app.
+4. **Generate Access Token**
+   - Configure Redirect Callback URLs
+   - Generate your Access Token
 
-```
-? Would you like to copy its configuration to the new app? Yes
-```
-Say 'yes' so it can use the configurations in `fly.toml`, which is more desired than fixing these later on.
+> **Important:** Each long-term access token is valid for 60 days and must be renewed.
 
-use `fly secrets set THREADS_ACCESS_TOKEN=<your-token>` to set the token for threads.
+## Deployment on Fly.io
 
-threads_access_token is the token from the user, that you use to post. You get this from Meta Developer Portal.
+### Initial Setup
 
-use `fly deploy` to deploy the app.
+1. **Launch the App**
+   ```bash
+   fly launch
+   ```
+   When prompted "Would you like to copy its configuration to the new app?", select **Yes** to use the existing `fly.toml` configuration.
 
-You can only schedule jobs with fly after the machine is deployed. With fly, you can only schedule jobs to run hourly, daily, weekly, monthly, etc. To have it run every 12 hours, you have to add some checks in your code.
+2. **Set Environment Variables**
+   ```bash
+   fly secrets set THREADS_ACCESS_TOKEN=<your-token>
+   ```
 
-To schedule a job, use `fly machine update <machine_id> --schedule hourly` to schedule it to run hourly.
+3. **Deploy**
+   ```bash
+   fly deploy
+   ```
 
-To see the machine id, use `fly machine list`.
+### Scheduling
 
-To see the logs streamed to your terminal, use `fly logs -i <machine_id>`.
+After deployment, you can schedule the bot to run automatically:
+
+1. **Get Machine ID**
+   ```bash
+   fly machine list
+   ```
+
+2. **Schedule Job**
+   ```bash
+   fly machine update <machine_id> --schedule hourly
+   ```
+
+   > **Note:** Fly.io supports hourly, daily, weekly, and monthly schedules. For custom intervals (like every 12 hours), implement the logic in your application code.
+
+3. **Monitor Logs**
+   ```bash
+   fly logs -i <machine_id>
+   ```
