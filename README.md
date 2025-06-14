@@ -76,6 +76,8 @@ After deployment, you can schedule the bot to run automatically:
 
    > **Note:** Fly.io supports hourly, daily, weekly, and monthly schedules. For custom intervals (like every 12 hours), implement the logic in your application code.
 
+   > **Note:** Fly ties an "hourly" schedule to the exact moment a Machine is first created, not to the top of each clock hour, and that anchor never moves. For example, if you run `fly machine run … --schedule hourly` at 10:13:39Z, the platform will auto-start the Machine around 11:13Z, 12:13Z, and so on. Manual interventions do not reset the original creation timestamp.
+
 3. **Monitor Logs**
    ```bash
    fly logs -i <machine_id>
