@@ -13,5 +13,12 @@ primary_region = 'sjc'
   EXPIRY_WARN_DAYS = '7'
   POST_INTERVAL_HOURS = '6'
 
-[[vm]]
-  size = 'shared-cpu-1x'
+[[machines]]
+  image = 'ghcr.io/you/threads-mini-bot:latest'
+  schedule = 'hourly'
+  cmd = ['node', 'index.js', '--once']
+  
+  [machines.guest]
+    cpu_kind = 'shared'
+    cpus = 0.05
+    memory_mb = 128

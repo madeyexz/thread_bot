@@ -24,29 +24,30 @@ function randomQuote() {
 
 async function debugToken() {
     console.log(`🔍 Debuging token`);
-    console.log(`🔑 Token length: ${ACCESS_TOKEN.length}`);
-    console.log(`🔑 Token starts with: ${ACCESS_TOKEN.substring(0, 10)}...`);
+    console.log(`Skipped`);
+    // console.log(`🔑 Token length: ${ACCESS_TOKEN.length}`);
+    // console.log(`🔑 Token starts with: ${ACCESS_TOKEN.substring(0, 10)}...`);
 
-    const r = await fetch('https://graph.threads.net/debug_token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-            input_token: ACCESS_TOKEN,
-            access_token: ACCESS_TOKEN
-        })
-    });
+    // const APP_TOKEN = `${process.env.THREADS_APP_ID}|${process.env.THREADS_APP_SECRET}`;
 
-    if (!r.ok) {
-        const responseText = await r.text();
-        console.error(`❌ Token debug failed: ${r.status} ${r.statusText}`);
-        console.error(`Response: ${responseText}`);
-        console.error(`Headers:`, Object.fromEntries(r.headers.entries()));
-        throw new Error(`Token debug failed: ${r.status} ${r.statusText} - ${responseText}`);
-    }
-    console.log(`✅ Token debug successful`);
-    return (await r.json()).data;
+    // const url =
+    //     'https://graph.facebook.com/debug_token?' +
+    //     new URLSearchParams({
+    //         input_token: ACCESS_TOKEN,      // user token
+    //         access_token: APP_TOKEN         // app token
+    //     });
+
+    // const r = await fetch(url, { method: 'GET' });
+
+    // if (!r.ok) {
+    //     const responseText = await r.text();
+    //     console.error(`❌ Token debug failed: ${r.status} ${r.statusText}`);
+    //     console.error(`Response: ${responseText}`);
+    //     console.error(`Headers:`, Object.fromEntries(r.headers.entries()));
+    //     throw new Error(`Token debug failed: ${r.status} ${r.statusText} - ${responseText}`);
+    // }
+    // console.log(`✅ Token debug successful`);
+    // return (await r.json()).data;
 }
 
 async function createContainer(text) {
@@ -78,6 +79,13 @@ async function publishContainer(id) {
 }
 
 async function postOnce() {
+    // Only post every 6 hours (when UTC hour is divisible by 6)
+    const currentHour = new Date().getUTCHours();
+    if (currentHour % 6 !== 0) {
+        console.log(`[${new Date().toISOString()}] ⏰ Skipping post - current hour ${currentHour} is not divisible by 6`);
+        return;
+    }
+
     const quote = randomQuote();
     const containerId = await createContainer(quote);
     const postId = await publishContainer(containerId);
@@ -88,10 +96,15 @@ async function loop() {
     while (true) {
         try {
             // Warn if token near expiry
-            const meta = await debugToken();
-            const secs = meta.expires_at - Math.floor(Date.now() / 1e3);
-            if (secs < EXP_WARN_DAYS * 86400)
-                console.warn(`⚠️  Token expires in ${(secs / 86400).toFixed(1)} days`);
+            let tokenMeta;
+            try {
+                tokenMeta = await debugToken();
+                const secs = tokenMeta.expires_at - Math.floor(Date.now() / 1e3);
+                if (secs < EXP_WARN_DAYS * 86400)
+                    console.warn(`⚠️  Token expires in ${(secs / 86400).toFixed(1)} days`);
+            } catch (e) {
+                console.warn('⚠️  Token check skipped:', e.message);
+            }
 
             await postOnce();
         } catch (e) {
