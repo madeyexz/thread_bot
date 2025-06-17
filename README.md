@@ -1,16 +1,21 @@
 # PG Threads Bot
 
-A technical implementation guide for automatically posting Paul Graham quotes to Threads.
+A technical implementation guide for automatically posting pre-generated Paul Graham quotes on [Threads](https://www.threads.com).
 
 ## Overview
-
-This bot automatically posts insightful quotes from Paul Graham's essays to Threads using the Threads API. The quotes are curated using OpenAI's Deep Research to extract meaningful insights from Paul Graham's published essays.
+1. Automatically posts quotes using the Threads API.
+2. The quotes are pre-generated using ChatGPT's Deep Research.
+3. Deployed on [Fly.io](https://fly.io).
 
 ## Getting the Quotes
 
-The quotes are generated using OpenAI Deep Research with the following prompt:
+The quotes are generated using ChatGPT Deep Research with the following prompt:
 
-> Read Paul Graham's essays on his site. Find/extract 150 insights in their original words. They should be insightful and short. Remember, use the original phrases and words.
+> Read Paul Graham's essays on his site. Find/extract 150 insights in their original words. They should be insightful and short. Remember, use the original phrases and words. Save the quotes to a CSV file, the first column should be the title of the essay, the second column should be the quote.
+
+Upon getting the quotes, run `extract_quotes.py` to extract the quotes into a text file.
+
+Rename it properly, place it in the root directory of the project, then set the corresponding `<quote-file>` as `QUOTES_FILE` in `index.js`.
 
 ## Setting Up Threads API Access
 
@@ -43,6 +48,13 @@ To use this bot, you'll need a Threads Access Token from Meta's Developer Portal
 ## Deployment on Fly.io
 
 ### Initial Setup
+
+0. Install `flyctl`, login, and set the app name
+   ```bash
+   brew install flyctl
+   fly auth login
+   fly apps create pg-threads-bot
+   ```
 
 1. **Launch the App**
    ```bash
