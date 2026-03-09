@@ -4,7 +4,7 @@ primary_region = "sjc"
 
 [env]
 EXPIRY_WARN_DAYS    = "7"
-POST_INTERVAL_HOURS = "1"          # index.js reads this
+POST_INTERVAL_HOURS = "6"          # index.js reads this
 # THREADS_ACCESS_TOKEN will be set as a secret, not checked-in
 
 [[vm]]
