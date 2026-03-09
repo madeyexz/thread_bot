@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-COPY index.js quotes_147.txt ./
+COPY index.js quotes_147.txt quotes_curated.txt ./
 
 # Minimal non-root user
 RUN useradd -m bot
