@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import fetch from 'node-fetch';
 
-const QUOTES_FILE = './quotes_147.txt';
+const QUOTES_FILE = './quotes_curated.txt';
 const INTERVAL_H = Number(process.env.POST_INTERVAL_HOURS || 6);
 const ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
 
@@ -18,6 +18,18 @@ const QUOTES = fs.readFileSync(QUOTES_FILE, 'utf8')
 
 function randomQuote() {
     return QUOTES[Math.floor(Math.random() * QUOTES.length)];
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function msUntilNextUtcHour() {
+    const now = new Date();
+    const nextHour = new Date(now);
+    nextHour.setUTCMinutes(0, 0, 0);
+    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
+    return nextHour.getTime() - now.getTime();
 }
 
 async function createContainer(text) {
@@ -62,13 +74,22 @@ async function postOnce() {
     console.log(`[${new Date().toISOString()}] ✅ ${postId}: ${quote}`);
 }
 
-// ------------------------------------------------------------ entry point
-(async () => {
-    try {
-        await postOnce();
-    } catch (e) {
-        console.error('❌', e);
-        process.exit(1);
+// Keep the worker alive so Fly sees a stable process during deploys.
+async function runForever() {
+    while (true) {
+        try {
+            await postOnce();
+        } catch (e) {
+            console.error('❌', e);
+        }
+
+        const sleepMs = msUntilNextUtcHour();
+        console.log(`[${new Date().toISOString()}] 💤 Sleeping ${Math.ceil(sleepMs / 1000)}s until next UTC hour`);
+        await sleep(sleepMs);
     }
-    process.exit(0);
-})();
+}
+
+runForever().catch((e) => {
+    console.error('❌ Fatal worker error', e);
+    process.exit(1);
+});
