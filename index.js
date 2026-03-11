@@ -20,18 +20,6 @@ function randomQuote() {
     return QUOTES[Math.floor(Math.random() * QUOTES.length)];
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function msUntilNextUtcHour() {
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setUTCMinutes(0, 0, 0);
-    nextHour.setUTCHours(nextHour.getUTCHours() + 1);
-    return nextHour.getTime() - now.getTime();
-}
-
 async function createContainer(text) {
     const r = await fetch('https://graph.threads.net/me/threads', {
         method: 'POST',
@@ -74,22 +62,12 @@ async function postOnce() {
     console.log(`[${new Date().toISOString()}] ✅ ${postId}: ${quote}`);
 }
 
-// Keep the worker alive so Fly sees a stable process during deploys.
-async function runForever() {
-    while (true) {
-        try {
-            await postOnce();
-        } catch (e) {
-            console.error('❌', e);
-        }
-
-        const sleepMs = msUntilNextUtcHour();
-        console.log(`[${new Date().toISOString()}] 💤 Sleeping ${Math.ceil(sleepMs / 1000)}s until next UTC hour`);
-        await sleep(sleepMs);
+// One-shot entry point for scheduled runs.
+(async () => {
+    try {
+        await postOnce();
+    } catch (e) {
+        console.error('❌', e);
+        process.exit(1);
     }
-}
-
-runForever().catch((e) => {
-    console.error('❌ Fatal worker error', e);
-    process.exit(1);
-});
+})();
